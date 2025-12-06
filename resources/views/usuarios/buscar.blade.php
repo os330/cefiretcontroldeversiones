@@ -1,5 +1,3 @@
-@extends('layouts.plantilla')
-
 @section('titulo', 'Editar Usuario')
 @extends('layouts.app')
 
@@ -11,26 +9,20 @@
         <div class="col-12">
             <div class="card shadow">
                 <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-search"></i> Buscar y Actualizar Usuarios
-                    </h4>
+                    <h4 class="mb-0">Buscar y actualizar usuarios</h4>
                 </div>
                 
                 <div class="card-body">
-                    <!-- Formulario de búsqueda -->
                     <form method="POST" action="{{ route('usuarios.search') }}" class="mb-4">
                         @csrf
                         <div class="input-group">
                             <input type="text" name="query" class="form-control" 
                                    placeholder="Buscar por nombre, apellido, correo o teléfono..."
                                    value="{{ $query ?? '' }}">
-                            <button class="btn btn-primary" type="submit">
-                                <i class="bi bi-search"></i> Buscar
-                            </button>
+                            <button class="btn btn-primary" type="submit">Buscar</button>
                         </div>
                     </form>
-                    
-                    <!-- Resultados -->
+
                     @if(isset($usuarios))
                         @if($usuarios->count() > 0)
                             <div class="table-responsive">
@@ -53,9 +45,7 @@
                                             <td>{{ $usuario->telefono }}</td>
                                             <td>
                                                 <a href="{{ route('usuarios.edit', $usuario->id_usuario) }}" 
-                                                   class="btn btn-warning btn-sm">
-                                                    <i class="bi bi-pencil"></i> Editar
-                                                </a>
+                                                   class="btn btn-warning btn-sm">Editar</a>
                                             </td>
                                         </tr>
                                         @endforeach
@@ -70,9 +60,7 @@
                     @endif
                     
                     <div class="mt-3">
-                        <a href="{{ route('dashboard') }}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver al Dashboard
-                        </a>
+                        <a href="{{ route('dashboard') }}" class="btn btn-secondary">Regresar</a>
                     </div>
                 </div>
             </div>

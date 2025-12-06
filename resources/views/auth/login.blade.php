@@ -59,7 +59,7 @@
     <div class="login-box">
         <div class="logo">
             <h2>CEFIRET</h2>
-            <p class="text-muted">Centro de Fisioterapia</p>
+            <p class="text-muted">Iniciar Sesión</p>
         </div>
         
         @if(session('success'))

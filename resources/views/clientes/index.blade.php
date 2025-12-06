@@ -1,4 +1,4 @@
-@extends('layout.plantilla')
+@extends('layouts.plantilla')
 
 @section('titulo', 'Clientes')
 
@@ -6,7 +6,6 @@
 
 <h2>Lista de Clientes</h2>
 
-<!-- Botón para crear cliente -->
 <a class="btn" href="{{ route('clientes.crear') }}">Agregar Cliente</a>
 
 <table>

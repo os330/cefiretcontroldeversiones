@@ -4,21 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'CEFIRET')</title>
-    
-    <!-- Bootstrap 5 -->
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Bootstrap Icons -->
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: #f8f9fa;
+            background: #A6C3D5;
         }
         
         .header {
-            background: #2c3e50;
+            background: #137FCA;
             color: white;
             padding: 15px 0;
         }
@@ -37,16 +35,13 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
     <div class="header">
         <div class="container">
             <div class="text-center">
-                <h3>CENTRO DE FISIOTERAPIA Y REHABILITACIÓN</h3>
+                <h3>CENTRO DE FISIOTERAPIA Y REHABILITACION</h3>
             </div>
         </div>
     </div>
-    
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ route('dashboard') }}">CEFIRET</a>
@@ -69,6 +64,7 @@
                             <li><a class="dropdown-item" href="{{ route('usuarios.buscar') }}">Actualizar datos</a></li>
                             <li><a class="dropdown-item" href="{{ route('expedientes.buscar') }}">Consultar expediente</a></li>
                             <li><a class="dropdown-item" href="{{ route('rutinas.index') }}">Rutinas</a></li>
+                            <li><a class="dropdown-item" href="{{ route('citas.index') }}">Citas</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -82,8 +78,7 @@
             </div>
         </div>
     </nav>
-    
-    <!-- Main Content -->
+
     <div class="container">
         <main class="main-content">
             @yield('content')
@@ -92,4 +87,21 @@
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+<script>
+    console.log('jQuery cargado:', typeof jQuery !== 'undefined');
+    console.log('Bootstrap cargado:', typeof bootstrap !== 'undefined');
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM completamente cargado');
+        
+        const asignarModal = document.getElementById('asignarModal');
+        console.log('Modal asignar existe:', asignarModal !== null);
+        
+        if (asignarModal) {
+            asignarModal.addEventListener('show.bs.modal', function() {
+                console.log('Modal de asignar se está abriendo');
+            });
+        }
+    });
+</script>
 </html>

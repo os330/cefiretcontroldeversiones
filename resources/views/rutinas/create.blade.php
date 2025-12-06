@@ -1,72 +1,106 @@
 @extends('layouts.app')
 
-@section('title', 'Crear Rutina - CEFIRET')
-
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-plus-circle"></i> Crear Nueva Rutina
-                    </h4>
-                </div>
-                
-                <div class="card-body">
-                    <form method="POST" action="{{ route('rutinas.store') }}">
-                        @csrf
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Nombre de la Rutina *</label>
-                            <input type="text" name="nombre" class="form-control" 
-                                   placeholder="Ej: Rutina para lumbalgia crónica" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Descripción *</label>
-                            <textarea name="descripcion" class="form-control" rows="4" 
-                                      placeholder="Describa los ejercicios, objetivos y precauciones..." required></textarea>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Duración (minutos) *</label>
-                                <input type="number" name="duracion" class="form-control" min="1" required>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Frecuencia *</label>
-                                <select name="frecuencia" class="form-select" required>
-                                    <option value="">Seleccionar frecuencia</option>
-                                    <option value="Diaria">Diaria</option>
-                                    <option value="3 veces por semana">3 veces por semana</option>
-                                    <option value="Alternando días">Alternando días</option>
-                                    <option value="Semanal">Semanal</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Paciente asignado</label>
-                            <select class="form-select">
-                                <option value="">Seleccionar paciente (opcional)</option>
-                                <!-- Aquí irían los pacientes de la base de datos -->
-                            </select>
-                        </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{{ route('rutinas.index') }}" class="btn btn-secondary me-md-2">
-                                <i class="bi bi-x-circle"></i> Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Guardar Rutina
-                            </button>
-                        </div>
-                    </form>
-                </div>
+<div class="container mt-4">
+
+    <h2 class="mb-4 text-primary">Crear Nueva Rutina</h2>
+
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    <form action="{{ route('rutinas.store') }}" method="POST">
+        @csrf
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Paciente</label>
+            <select name="id_paciente" class="form-select" required>
+                <option value="">Selecciona un paciente...</option>
+                @foreach($pacientes as $p)
+                    <option value="{{ $p->id_usuario }}">
+                        {{ $p->nombre }} {{ $p->apaterno }} {{ $p->amaterno }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Fecha de asignación</label>
+            <input type="date" name="fecha_asignacion" class="form-control" required>
+        </div>
+
+        <hr>
+
+        <h5 class="text-secondary mt-3">Información del Video</h5>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Título del video</label>
+            <input type="text" name="video_titulo" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">URL del video</label>
+            <input type="text" name="video_url" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Descripción (opcional)</label>
+            <textarea name="video_descripcion" class="form-control" rows="2"></textarea>
+        </div>
+
+        <hr>
+
+        <h5 class="text-secondary">Detalles del ejercicio</h5>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Repeticiones</label>
+                <input type="number" name="repeticiones" class="form-control" min="1">
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Series</label>
+                <input type="number" name="series" class="form-control" min="1">
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Tiempo estimado (minutos)</label>
+                <input type="number" name="tiempo" class="form-control" min="1">
             </div>
         </div>
-    </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Observaciones</label>
+            <textarea name="observaciones" class="form-control" rows="3"></textarea>
+        </div>
+
+        <hr>
+
+        <h5 class="text-secondary">Días asignados</h5>
+        <p class="text-muted">Selecciona al menos un día</p>
+
+        <div class="mb-3">
+            @php
+                $dias = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+            @endphp
+
+            @foreach($dias as $dia)
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox"
+                           name="dias[]" value="{{ $dia }}" id="dia_{{ $dia }}">
+                    <label class="form-check-label" for="dia_{{ $dia }}">{{ $dia }}</label>
+                </div>
+            @endforeach
+        </div>
+
+        <hr>
+
+        <div class="d-flex justify-content-between">
+            <a href="{{ route('rutinas.index') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar Rutina</button>
+        </div>
+
+    </form>
+
 </div>
 @endsection

@@ -1,4 +1,3 @@
-<!-- resources/views/clientes/lista.blade.php -->
 <!DOCTYPE html>
 <html lang="es">
 <head>

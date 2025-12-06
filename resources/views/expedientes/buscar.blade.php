@@ -8,26 +8,20 @@
         <div class="col-12">
             <div class="card shadow">
                 <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-folder"></i> Consultar Expediente Médico
-                    </h4>
+                    <h4 class="mb-0">Consultar Expediente Médico</h4>
                 </div>
                 
                 <div class="card-body">
-                    <!-- Formulario de búsqueda -->
                     <form method="POST" action="{{ route('expedientes.search') }}" class="mb-4">
                         @csrf
                         <div class="input-group">
                             <input type="text" name="query" class="form-control" 
                                    placeholder="Buscar paciente por nombre, apellido, correo o teléfono..."
                                    value="{{ $query ?? '' }}">
-                            <button class="btn btn-success" type="submit">
-                                <i class="bi bi-search"></i> Buscar Paciente
-                            </button>
+                            <button class="btn btn-success" type="submit">Buscar Paciente</button>
                         </div>
                     </form>
                     
-                    <!-- Resultados -->
                     @if(isset($pacientes))
                         @if($pacientes->count() > 0)
                             <div class="table-responsive">
@@ -52,9 +46,7 @@
                                             <td>{{ date('d/m/Y', strtotime($paciente->fecha_nac)) }}</td>
                                             <td>
                                                 <a href="{{ route('expedientes.show', $paciente->id_usuario) }}" 
-                                                   class="btn btn-info btn-sm">
-                                                    <i class="bi bi-eye"></i> Ver Expediente
-                                                </a>
+                                                   class="btn btn-info btn-sm">Ver Expediente</a>
                                             </td>
                                         </tr>
                                         @endforeach
@@ -62,16 +54,12 @@
                                 </table>
                             </div>
                         @else
-                            <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle"></i> No se encontraron pacientes
-                            </div>
+                            <div class="alert alert-warning">No se encontraron pacientes</div>
                         @endif
                     @endif
                     
                     <div class="mt-3">
-                        <a href="{{ route('dashboard') }}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver al Dashboard
-                        </a>
+                        <a href="{{ route('dashboard') }}" class="btn btn-secondary">Volver</a>
                     </div>
                 </div>
             </div>

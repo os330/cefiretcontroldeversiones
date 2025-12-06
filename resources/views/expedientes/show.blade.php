@@ -8,13 +8,10 @@
         <div class="col-12">
             <div class="card shadow">
                 <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-file-medical"></i> Expediente Médico
-                    </h4>
+                    <h4 class="mb-0">Expediente Médico</h4>
                 </div>
                 
                 <div class="card-body">
-                    <!-- Información del paciente -->
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <h5>Datos del Paciente</h5>
@@ -49,20 +46,10 @@
                         
                         <div class="col-md-6">
                             <h5>Información Médica</h5>
-                            <p class="text-muted">
-                                <i class="bi bi-info-circle"></i> 
-                                Aquí se mostraría la información médica del paciente, 
-                                historial de consultas, diagnósticos, tratamientos, etc.
-                            </p>
-                            <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle"></i>
-                                Esta sección está en desarrollo. Próximamente se integrará 
-                                el historial médico completo.
-                            </div>
+                            <p class="text-muted">Aquí se mostraría la información médica del paciente,historial de consultas, diagnósticos, tratamientos, etc.</p>
                         </div>
                     </div>
-                    
-                    <!-- Secciones del expediente -->
+
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <div class="card">
@@ -96,12 +83,8 @@
                     </div>
                     
                     <div class="mt-4">
-                        <a href="{{ route('expedientes.buscar') }}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Volver a Búsqueda
-                        </a>
-                        <a href="{{ route('dashboard') }}" class="btn btn-primary">
-                            <i class="bi bi-house-door"></i> Ir al Dashboard
-                        </a>
+                        <a href="{{ route('expedientes.buscar') }}" class="btn btn-secondary">Volver a busqueda</a>
+                        <a href="{{ route('dashboard') }}" class="btn btn-primary">Ir al incio</a>
                     </div>
                 </div>
             </div>

@@ -8,7 +8,15 @@ use Illuminate\Support\Facades\Hash;
 
 class UsuarioController extends Controller
 {
-    // Guardar nuevo usuario (VERSIÓN QUE SÍ FUNCIONA)
+    public function create()
+    {
+        if (!session()->has('user_id')) {
+            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
+        }
+        
+        return view('usuarios.create');
+    }
+    
     public function store(Request $request)
     {
         if (!session()->has('user_id')) {
@@ -22,17 +30,18 @@ class UsuarioController extends Controller
             'correo' => 'required|email|unique:usuario,correo',
             'telefono' => 'required|string|max:15',
             'fecha_nac' => 'required|date',
-            'contrasena' => 'required|min:6'
+            'contrasena' => 'required|min:6',
+            'id_tipo_usuario' => 'required|in:1,2,3'
         ]);
         
         try {
-            // OBTENER EL SIGUIENTE ID MANUALMENTE
+            // obtener el siguiente ID
             $maxId = DB::table('usuario')->max('id_usuario');
             $nextId = ($maxId ? $maxId + 1 : 1);
             
-            // INSERTAR CON id_usuario EXPLÍCITO
+            // insertar usuario
             DB::table('usuario')->insert([
-                'id_usuario' => $nextId,  // ← ESTA ES LA CLAVE
+                'id_usuario' => $nextId,
                 'nombre' => $request->nombre,
                 'apaterno' => $request->apaterno,
                 'amaterno' => $request->amaterno,
@@ -40,24 +49,22 @@ class UsuarioController extends Controller
                 'contrasena' => Hash::make($request->contrasena),
                 'telefono' => $request->telefono,
                 'fecha_nac' => $request->fecha_nac,
-                'id_tipo_usuario' => 2
+                'id_tipo_usuario' => $request->id_tipo_usuario
             ]);
             
+            // si es PACIENTE redirigir a formulario de expediente
+            if ($request->id_tipo_usuario == 3) {
+                return redirect()->route('expedientes.completar', $nextId)
+                    ->with('success', 'Usuario paciente registrado. Complete el expediente médico.');
+            }
+            
+            // si es administrador o fisioterapeuta, regresar al inicio
             return redirect()->route('usuarios.create')
-                ->with('success', 'Usuario registrado exitosamente (ID: ' . $nextId . ')');
+                ->with('success', 'Usuario registrado exitosamente');
                 
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Error al registrar: ' . $e->getMessage()]);
         }
-    }
-    
-    // Las demás funciones las mantienes igual...
-    public function create()
-    {
-        if (!session()->has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-        return view('usuarios.create');
     }
     
     public function buscar()

@@ -8,43 +8,37 @@ use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
-    // Mostrar formulario de login
+
     public function showLoginForm()
     {
-        // Si ya tiene sesión, ir al dashboard
         if (session()->has('user_id')) {
             return redirect()->route('dashboard');
         }
         return view('auth.login');
     }
     
-    // Procesar login
     public function login(Request $request)
     {
-        // Validar datos
+
         $request->validate([
             'email' => 'required|email',
             'password' => 'required'
         ]);
         
-        // Buscar usuario por correo
+        // buscar usuario por correo
         $user = DB::table('usuario')
             ->where('correo', $request->email)
             ->first();
         
         if ($user) {
-            // Verificar contraseña (compatible con texto plano y bcrypt)
+            // verificar contraseña
             $passwordValid = false;
             $password = $user->contrasena;
             
-            // Si es bcrypt (60 caracteres, empieza con $2y$)
             if (strlen($password) === 60 && strpos($password, '$2y$') === 0) {
                 $passwordValid = Hash::check($request->password, $password);
             } else {
-                // Si es texto plano, comparar directamente
                 $passwordValid = ($password === $request->password);
-                
-                // Si funciona y es texto plano, convertir a bcrypt
                 if ($passwordValid) {
                     DB::table('usuario')
                         ->where('id_usuario', $user->id_usuario)
@@ -53,10 +47,10 @@ class AuthController extends Controller
             }
             
             if ($passwordValid) {
-                // Crear nombre completo
+                // crear nombre completo
                 $nombreCompleto = trim($user->nombre . ' ' . $user->apaterno . ' ' . $user->amaterno);
                 
-                // Crear sesión
+                // crear sesion
                 session([
                     'user_id' => $user->id_usuario,
                     'user_nombre' => $nombreCompleto,
@@ -72,7 +66,7 @@ class AuthController extends Controller
         return back()->withErrors(['email' => 'Correo o contraseña incorrectos']);
     }
     
-    // Cerrar sesión
+    // cerrar sesion
     public function logout()
     {
         session()->flush();
