@@ -4,312 +4,184 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
 
 class CitaController extends Controller
 {
     public function index()
     {
-        if (!Session::has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-
-        // obtener todas las citas con información de paciente y fisioterapeuta
-        $citas = DB::select("
-            SELECT c.*, 
-                   up.nombre as paciente_nombre, up.apaterno as paciente_apaterno,
-                   uf.nombre as fisio_nombre, uf.apaterno as fisio_apaterno
-            FROM cita c
-            LEFT JOIN usuario up ON c.id_usuario = up.id_usuario
-            LEFT JOIN usuario uf ON c.id_fisioterapeuta = uf.id_usuario
-            ORDER BY c.fecha DESC, c.hora DESC
-        ");
-
-        // obtener fisioterapeutas disponibles
-        $fisioterapeutas = DB::table('usuario')
-            ->where('id_tipo_usuario', 2)
-            ->orderBy('nombre')
+        $citas = DB::table('cita')
+            ->join('usuario as paciente', 'cita.id_usuario', '=', 'paciente.id_usuario')
+            ->join('usuario as fisio', 'cita.id_fisioterapeuta', '=', 'fisio.id_usuario')
+            ->select(
+                'cita.*',
+                'paciente.nombre as paciente',
+                'fisio.nombre as fisio'
+            )
+            ->orderBy('cita.fecha')
+            ->orderBy('cita.hora')
             ->get();
 
-        // obtener pacientes
-        $pacientes = DB::table('usuario')
-            ->where('id_tipo_usuario', 3)
-            ->orderBy('nombre')
-            ->get();
-
-        return view('citas.index', compact('citas', 'fisioterapeutas', 'pacientes'));
+        return view('cita.index', compact('citas'));
     }
 
     public function create()
     {
-        if (!Session::has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
+        $pacientes = DB::table('usuario')->where('id_tipo_usuario', 3)->get();
+        $fisios = DB::table('usuario')->where('id_tipo_usuario', 2)->get();
 
-        // obtener fisioterapeutas
-        $fisioterapeutas = DB::table('usuario')
-            ->where('id_tipo_usuario', 2)
-            ->orderBy('nombre')
-            ->get();
-
-        // obtener pacientes
-        $pacientes = DB::table('usuario')
-            ->where('id_tipo_usuario', 3)
-            ->orderBy('nombre')
-            ->get();
-
-        return view('citas.create', compact('fisioterapeutas', 'pacientes'));
+        return view('cita.create', compact('pacientes', 'fisios'));
     }
 
     public function store(Request $request)
     {
-        if (!Session::has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-
         $request->validate([
-            'id_usuario' => 'required|integer',
-            'id_fisioterapeuta' => 'required|integer',
+            'paciente_id' => 'required',
+            'fisioterapeuta_id' => 'required',
             'fecha' => 'required|date',
-            'hora' => 'required',
-            'motivo' => 'required|string|max:500',
-            'observaciones' => 'nullable|string',
-            'estatus' => 'required|in:pendiente,confirmada,cancelada,completada'
+            'hora' => 'required'
         ]);
 
-        try {
-            $citaExistente = DB::table('cita')
-                ->where('id_fisioterapeuta', $request->id_fisioterapeuta)
-                ->where('fecha', $request->fecha)
-                ->where('hora', $request->hora)
-                ->where('estatus', '!=', 'cancelada')
-                ->first();
+        // validar disponibilidad
+        $existe = DB::table('cita')
+            ->where('id_fisioterapeuta', $request->fisioterapeuta_id)
+            ->where('fecha', $request->fecha)
+            ->where('hora', $request->hora)
+            ->exists();
 
-            if ($citaExistente) {
-                return redirect()->back()
-                    ->with('error', 'El fisioterapeuta ya tiene una cita programada para esa fecha y hora')
-                    ->withInput();
-            }
-
-            // insertar nueva cita
-            DB::table('cita')->insert([
-                'id_usuario' => $request->id_usuario,
-                'id_fisioterapeuta' => $request->id_fisioterapeuta,
-                'fecha' => $request->fecha,
-                'hora' => $request->hora,
-                'motivo' => $request->motivo,
-                'observaciones' => $request->observaciones,
-                'estatus' => $request->estatus,
-            ]);
-
-            return redirect()->route('citas.index')
-                ->with('success', 'Cita agendada exitosamente');
-
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Error: ' . $e->getMessage())
-                ->withInput();
+        if ($existe) {
+            return back()->with('error', 'El fisioterapeuta ya tiene una cita en esa fecha y hora.');
         }
+
+        // obtener el siguiente ID
+        $maxId = DB::table('cita')->max('id_cita');
+        $nextId = ($maxId ? $maxId + 1 : 1);
+
+        DB::table('cita')->insert([
+            'id_cita' => $nextId,
+            'id_usuario' => $request->paciente_id,
+            'id_fisioterapeuta' => $request->fisioterapeuta_id,
+            'fecha' => $request->fecha,
+            'hora' => $request->hora,
+            'motivo' => $request->motivo,
+            'estatus' => 'programada',
+        ]);
+
+        return redirect()->route('cita.index')->with('success', 'Cita creada correctamente');
+    }
+
+    public function show($id)
+    {
+        $cita = DB::table('cita')->where('id_cita', $id)->first();
+        return view('cita._detalles', compact('cita'));
     }
 
     public function edit($id)
     {
-        if (!Session::has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
+        $cita = DB::table('cita')->where('id_cita', $id)->first();
+        $pacientes = DB::table('usuario')->where('id_tipo_usuario', 3)->get();
+        $fisios = DB::table('usuario')->where('id_tipo_usuario', 2)->get();
 
-        $cita = DB::table('cita')
-            ->where('id_cita', $id)
-            ->first();
-
-        if (!$cita) {
-            return redirect()->route('citas.index')
-                ->with('error', 'Cita no encontrada');
-        }
-
-        $fisioterapeutas = DB::table('usuario')
-            ->where('id_tipo_usuario', 2)
-            ->orderBy('nombre')
-            ->get();
-
-        $pacientes = DB::table('usuario')
-            ->where('id_tipo_usuario', 3)
-            ->orderBy('nombre')
-            ->get();
-
-        return view('citas.edit', compact('cita', 'fisioterapeutas', 'pacientes'));
+        return view('cita.edit', compact('cita', 'pacientes', 'fisios'));
     }
 
     public function update(Request $request, $id)
     {
-        if (!Session::has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-
         $request->validate([
-            'id_usuario' => 'required|integer',
-            'id_fisioterapeuta' => 'required|integer',
+            'paciente_id' => 'required',
+            'fisioterapeuta_id' => 'required',
             'fecha' => 'required|date',
-            'hora' => 'required',
-            'motivo' => 'required|string|max:500',
-            'observaciones' => 'nullable|string',
-            'estatus' => 'required|in:pendiente,confirmada,cancelada,completada'
+            'hora' => 'required'
         ]);
 
-        try {
-            $citaExistente = DB::table('cita')
-                ->where('id_fisioterapeuta', $request->id_fisioterapeuta)
-                ->where('fecha', $request->fecha)
-                ->where('hora', $request->hora)
-                ->where('id_cita', '!=', $id)
-                ->where('estatus', '!=', 'cancelada')
-                ->first();
+        // validar disponibilidad
+        $existe = DB::table('cita')
+            ->where('id_cita', '!=', $id)
+            ->where('id_fisioterapeuta', $request->fisioterapeuta_id)
+            ->where('fecha', $request->fecha)
+            ->where('hora', $request->hora)
+            ->exists();
 
-            if ($citaExistente) {
-                return redirect()->back()
-                    ->with('error', 'El fisioterapeuta ya tiene una cita programada para esa fecha y hora')
-                    ->withInput();
-            }
-
-            // actualizar cita
-            DB::table('cita')
-                ->where('id_cita', $id)
-                ->update([
-                    'id_usuario' => $request->id_usuario,
-                    'id_fisioterapeuta' => $request->id_fisioterapeuta,
-                    'fecha' => $request->fecha,
-                    'hora' => $request->hora,
-                    'motivo' => $request->motivo,
-                    'observaciones' => $request->observaciones,
-                    'estatus' => $request->estatus,
-                ]);
-
-            return redirect()->route('citas.index')
-                ->with('success', 'Cita actualizada exitosamente');
-
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Error: ' . $e->getMessage())
-                ->withInput();
-        }
-    }
-
-    public function cancelar($id)
-    {
-        if (!Session::has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
+        if ($existe) {
+            return back()->with('error', 'El fisioterapeuta ya tiene una cita en esa fecha y hora.');
         }
 
-        try {
-            DB::table('cita')
-                ->where('id_cita', $id)
-                ->update(['estatus' => 'cancelada']);
+        DB::table('cita')
+            ->where('id_cita', $id)
+            ->update([
+                'id_usuario' => $request->paciente_id,
+                'id_fisioterapeuta' => $request->fisioterapeuta_id,
+                'fecha' => $request->fecha,
+                'hora' => $request->hora,
+                'motivo' => $request->motivo,
+            ]);
 
-            return redirect()->route('citas.index')
-                ->with('success', 'Cita cancelada exitosamente');
-
-        } catch (\Exception $e) {
-            return redirect()->route('citas.index')
-                ->with('error', 'Error: ' . $e->getMessage());
-        }
+        return redirect()->route('cita.index')->with('success', 'Cita actualizada correctamente');
     }
 
     public function destroy($id)
     {
-        if (!Session::has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
+        DB::table('cita')->where('id_cita', $id)->delete();
 
-        try {
-            DB::table('cita')
-                ->where('id_cita', $id)
-                ->delete();
-
-            return redirect()->route('citas.index')
-                ->with('success', 'Cita eliminada exitosamente');
-
-        } catch (\Exception $e) {
-            return redirect()->route('citas.index')
-                ->with('error', 'Error: ' . $e->getMessage());
-        }
+        return redirect()->route('cita.index')
+            ->with('success', 'Cita eliminada correctamente');
     }
 
-    public function getHorariosDisponibles(Request $request)
-    {
-        $request->validate([
-            'id_fisioterapeuta' => 'required|integer',
-            'fecha' => 'required|date'
-        ]);
+     public function cancelar($id)
+     {
+          DB::table('cita')->where('id_cita', $id)->update(['estatus' => 'cancelada']);
+          return redirect()->route('cita.index')->with('success', 'Cita cancelada correctamente');
+     }
 
-        try {
-            $horariosDisponibles = [
-                '09:00', '10:00', '11:00', '12:00', 
-                '13:00', '14:00', '15:00', '16:00', '17:00'
-            ];
-            $citasAgendadas = DB::table('cita')
-                ->where('id_fisioterapeuta', $request->id_fisioterapeuta)
-                ->where('fecha', $request->fecha)
-                ->where('estatus', '!=', 'cancelada')
-                ->pluck('hora')
-                ->toArray();
+     public function disponibilidad(Request $request)
+     {
+        $fisio = $request->fisioterapeuta_id;
+        $fecha = $request->fecha;
 
-            $horariosDisponibles = array_diff($horariosDisponibles, $citasAgendadas);
+        $horas_ocupadas = DB::table('cita')
+            ->where('id_fisioterapeuta', $fisio)
+            ->where('fecha', $fecha)
+            ->pluck('hora')
+            ->toArray();
 
-            return response()->json([
-                'success' => true,
-                'horarios' => array_values($horariosDisponibles)
-            ]);
+        $horas = [
+            "09:00", "10:00", "11:00", "12:00",
+            "14:00", "15:00", "16:00", "17:00"
+        ];
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
+        $disponibles = array_diff($horas, $horas_ocupadas);
+
+        return view('cita.disponibilidad', compact('disponibles', 'fecha'));
     }
 
-    public function disponibilidad()
+    public function events()
     {
-        if (!Session::has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-
-        $fisioterapeutas = DB::table('usuario')
-            ->where('id_tipo_usuario', 2)
-            ->orderBy('nombre')
+        $rows = DB::table('cita')
+            ->join('usuario as paciente', 'cita.id_usuario', '=', 'paciente.id_usuario')
+            ->join('usuario as fisio', 'cita.id_fisioterapeuta', '=', 'fisio.id_usuario')
+            ->select('cita.*', 'paciente.nombre as paciente', 'fisio.nombre as fisio')
             ->get();
 
-        return view('citas.disponibilidad', compact('fisioterapeutas'));
-    }
+        $events = [];
+        foreach ($rows as $r) {
+            $start = $r->fecha;
+            if (!empty($r->hora)) {
+                $hora = substr($r->hora, 0, 5);
+                $start = $start . 'T' . $hora;
+            }
 
-    public function getCitasPorFecha(Request $request)
-    {
-        $request->validate([
-            'fecha' => 'required|date'
-        ]);
-
-        try {
-            $citas = DB::select("
-                SELECT c.*, 
-                       up.nombre as paciente_nombre, up.apaterno as paciente_apaterno,
-                       uf.nombre as fisio_nombre
-                FROM cita c
-                LEFT JOIN usuario up ON c.id_usuario = up.id_usuario
-                LEFT JOIN usuario uf ON c.id_fisioterapeuta = uf.id_usuario
-                WHERE c.fecha = ?
-                ORDER BY c.hora ASC
-            ", [$request->fecha]);
-
-            return response()->json([
-                'success' => true,
-                'citas' => $citas
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            $title = ($r->paciente ?? '') . ' - ' . ($r->fisio ?? '');
+            $events[] = [
+                'id' => $r->id_cita,
+                'title' => $title,
+                'start' => $start,
+                'extendedProps' => [
+                    'motivo' => $r->motivo,
+                    'estatus' => $r->estatus ?? 'programada'
+                ],
+                'color' => (isset($r->estatus) && $r->estatus === 'cancelada') ? '#ff9f89' : '#3788d8'
+            ];
         }
+
+        return response()->json($events);
     }
 }

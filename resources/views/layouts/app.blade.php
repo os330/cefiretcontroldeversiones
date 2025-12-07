@@ -64,7 +64,7 @@
                             <li><a class="dropdown-item" href="{{ route('usuarios.buscar') }}">Actualizar datos</a></li>
                             <li><a class="dropdown-item" href="{{ route('expedientes.buscar') }}">Consultar expediente</a></li>
                             <li><a class="dropdown-item" href="{{ route('rutinas.index') }}">Rutinas</a></li>
-                            <li><a class="dropdown-item" href="{{ route('citas.index') }}">Citas</a></li>
+                            <li><a class="dropdown-item" href="{{ route('cita.index') }}">Citas</a></li>
                         </ul>
                     </li>
                 </ul>

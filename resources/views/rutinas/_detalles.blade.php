@@ -242,5 +242,4 @@
     })();
 </script>
 @endpush
-
 @endsection

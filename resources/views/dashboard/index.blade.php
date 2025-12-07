@@ -50,7 +50,7 @@
                                         <a href="{{ route('usuarios.buscar') }}" class="btn btn-secondary btn-lg">Buscar Usuario
                                         <a href="{{ route('expedientes.buscar') }}" class="btn btn-success btn-lg">Consultar Expediente</a>
                                         <a href="{{ route('rutinas.index') }}" class="btn btn-warning btn-lg">Gestionar Rutinas</a>
-                                        <a href="{{ route('citas.index') }}" class="btn btn-info btn-lg">Gestionar Citas</a>
+                                        <a href="{{ route('cita.index') }}" class="btn btn-info btn-lg">Gestionar Citas</a>
                                     </div>
                                 </div>
                             </div>
