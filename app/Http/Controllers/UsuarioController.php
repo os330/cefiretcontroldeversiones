@@ -10,14 +10,19 @@ use Illuminate\Support\Facades\Mail;
 
 class UsuarioController extends Controller
 {
-    public function create()
-    {
-        if (!session()->has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-
-        return view('usuarios.create');
+    public function create(){
+    if (!session()->has('user_id')) {
+        return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
     }
+
+    try {
+        return view('usuarios.create');
+    } catch (\Exception $e) {
+        return redirect()->route('usuarios.buscar')
+            ->with('error', 'Error al cargar la vista: ' . $e->getMessage());
+    }
+}
+
 
     public function store(Request $request)
     {
@@ -78,12 +83,18 @@ class UsuarioController extends Controller
     }
 
     public function buscar()
-    {
-        if (!session()->has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-        return view('usuarios.buscar');
+{
+    if (!session()->has('user_id')) {
+        return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
     }
+
+    try {
+        return view('usuarios.buscar');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Error al cargar la busqueda: ' . $e->getMessage());
+    }
+}
+
 
     public function search(Request $request)
     {

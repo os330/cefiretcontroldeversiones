@@ -10,22 +10,27 @@ class ExpedienteController extends Controller
 
     public function buscar()
     {
-        if (!session()->has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
+        try {
+            if (!session()->has('user_id')) {
+                return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
+            }
+
+            return view('expedientes.buscar');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al cargar el buscar: ' . $e->getMessage());
         }
-        
-        return view('expedientes.buscar');
     }
 
     public function search(Request $request)
     {
-        if (!session()->has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-        
-        $query = $request->input('query');
-
         try {
+
+            if (!session()->has('user_id')) {
+                return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
+            }
+
+            $query = $request->input('query');
 
             $pacientes = DB::table('usuario')
                 ->where(function($q) use ($query) {
@@ -38,82 +43,82 @@ class ExpedienteController extends Controller
                 ->where('id_tipo_usuario', 3)
                 ->get();
 
+            return view('expedientes.buscar', compact('pacientes', 'query'));
+
         } catch (\Exception $e) {
             return back()->with('error', 'Error al buscar pacientes: ' . $e->getMessage());
         }
-        
-        return view('expedientes.buscar', compact('pacientes', 'query'));
     }
 
     public function show($id)
     {
-        if (!session()->has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-
         try {
 
+            if (!session()->has('user_id')) {
+                return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
+            }
+
             $paciente = DB::table('usuario')->where('id_usuario', $id)->first();
+
+            if (!$paciente) {
+                return redirect()->route('expedientes.buscar')
+                    ->with('error', 'Paciente no encontrado');
+            }
+
+            return view('expedientes.show', compact('paciente'));
 
         } catch (\Exception $e) {
             return back()->with('error', 'Error al cargar expediente: ' . $e->getMessage());
         }
-        
-        if (!$paciente) {
-            return redirect()->route('expedientes.buscar')
-                ->with('error', 'Paciente no encontrado');
-        }
-        
-        return view('expedientes.show', compact('paciente'));
     }
     
     public function completar($id_usuario)
     {
-        if (!session()->has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-
         try {
+
+            if (!session()->has('user_id')) {
+                return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
+            }
 
             $paciente = DB::table('usuario')
                 ->where('id_usuario', $id_usuario)
                 ->where('id_tipo_usuario', 3)
                 ->first();
 
+            if (!$paciente) {
+                return redirect()->route('usuarios.create')
+                    ->with('error', 'Paciente no encontrado');
+            }
+
+            return view('expedientes.completar', compact('paciente'));
+
         } catch (\Exception $e) {
             return back()->with('error', 'Error al cargar datos del paciente: ' . $e->getMessage());
         }
-        
-        if (!$paciente) {
-            return redirect()->route('usuarios.create')
-                ->with('error', 'Paciente no encontrado');
-        }
-        
-        return view('expedientes.completar', compact('paciente'));
     }
     
     public function guardarExpediente(Request $request, $id_usuario)
     {
-        if (!session()->has('user_id')) {
-            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
-        }
-
-        $request->validate([
-            'fecha_creacion' => 'required|date',
-            'sexo' => 'required|string',
-            'edad' => 'required|integer|min:0',
-            'edo_civil' => 'required|string',
-            'ocupacion' => 'required|string',
-            'domicilio' => 'required|string',
-            'colonia' => 'required|string',
-            'municipio' => 'required|string',
-            'lugar_nac' => 'required|string',
-            'lugar_residencia' => 'required|string',
-            'contacto_emergencia' => 'required|string',
-            'nacionalidad' => 'required|string'
-        ]);
-        
         try {
+
+            if (!session()->has('user_id')) {
+                return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
+            }
+
+            $request->validate([
+                'fecha_creacion' => 'required|date',
+                'sexo' => 'required|string',
+                'edad' => 'required|integer|min:0',
+                'edo_civil' => 'required|string',
+                'ocupacion' => 'required|string',
+                'domicilio' => 'required|string',
+                'colonia' => 'required|string',
+                'municipio' => 'required|string',
+                'lugar_nac' => 'required|string',
+                'lugar_residencia' => 'required|string',
+                'contacto_emergencia' => 'required|string',
+                'nacionalidad' => 'required|string'
+            ]);
 
             $maxIdExp = DB::table('expediente')->max('id_expediente');
             $nextIdExp = ($maxIdExp ? $maxIdExp + 1 : 1);
@@ -156,7 +161,7 @@ class ExpedienteController extends Controller
                 'revision_pies' => substr($request->revision_pies, 0, 100),
                 'horas_sueno' => substr($request->horas_sueno, 0, 100)
             ]);
-            
+
             $maxIdViv = DB::table('vivienda')->max('id_vivienda');
             $nextIdViv = ($maxIdViv ? $maxIdViv + 1 : 1);
             
@@ -173,10 +178,10 @@ class ExpedienteController extends Controller
                 'gas' => substr($request->gas, 0, 100),
                 'limpieza_hogar' => substr($request->limpieza_hogar, 0, 100)
             ]); 
-            
+
             return redirect()->route('usuarios.create')
                 ->with('success', 'Expediente clínico completado exitosamente (ID: ' . $nextIdExp . ')');
-                
+
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Error al guardar expediente: ' . $e->getMessage()]);
         }

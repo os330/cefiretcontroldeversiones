@@ -9,12 +9,23 @@ class ProgresoController extends Controller
 {
     public function index($idPaciente)
     {
-        try {
+        if (!session()->has('user_id')) {
+            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
+        }
 
-            $paciente = DB::table('cliente')->where('idcliente', $idPaciente)->first();
+        try {
+            $paciente = DB::table('usuario')
+                ->where('id_usuario', $idPaciente)
+                ->where('id_tipo_usuario', 3)
+                ->first();
+
+            if (!$paciente) {
+                return back()->with('error', 'Paciente no encontrado');
+            }
 
             $progresos = DB::table('progreso')
-                ->where('idcliente', $idPaciente)
+                ->where('id_usuario', $idPaciente)
+                ->orderBy('fecha', 'desc')
                 ->get();
 
         } catch (\Exception $e) {
@@ -25,22 +36,31 @@ class ProgresoController extends Controller
 
     public function registrar($idPaciente)
     {
-        return view('progreso.registrar', compact('idPaciente'));
+        try {
+
+            return view('progreso.registrar', compact('idPaciente'));
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al cargar el formulario: ' . $e->getMessage());
+        }
     }
 
     public function guardar(Request $request, $idPaciente)
     {
+        if (!session()->has('user_id')) {
+            return redirect()->route('login.form')->with('error', 'Debes iniciar sesión');
+        }
+
         $request->validate([
-            'descripcion' => 'required',
-            'fecha' => 'required'
+            'descripcion' => 'required|string|max:500',
+            'fecha' => 'required|date'
         ]);
 
         try {
 
             DB::table('progreso')->insert([
-                'idcliente' => $idPaciente,
-                'descripcion' => $request->descripcion,
-                'fecha' => $request->fecha
+                'id_usuario'   => $idPaciente,
+                'descripcion'  => $request->descripcion,
+                'fecha'        => $request->fecha
             ]);
 
         } catch (\Exception $e) {

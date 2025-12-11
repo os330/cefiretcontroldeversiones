@@ -214,7 +214,7 @@ class RutinaController extends Controller
                     'observaciones' => $request->observaciones
                 ]);
 
-            // actualizar días
+            // actualizar dias
             DB::table('rutina_dias')
                 ->where('id_rutina', $id)
                 ->delete();
@@ -271,10 +271,7 @@ class RutinaController extends Controller
                 'rutinas' => $rutinas
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ]);
+            return response()->json(['success' => false,'message' => $e->getMessage()]);
         }
     }
 
