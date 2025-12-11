@@ -9,12 +9,17 @@ class ProgresoController extends Controller
 {
     public function index($idPaciente)
     {
-        $paciente = DB::table('cliente')->where('idcliente', $idPaciente)->first();
+        try {
 
-        $progresos = DB::table('progreso')
-            ->where('idcliente', $idPaciente)
-            ->get();
+            $paciente = DB::table('cliente')->where('idcliente', $idPaciente)->first();
 
+            $progresos = DB::table('progreso')
+                ->where('idcliente', $idPaciente)
+                ->get();
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al cargar el progreso del paciente: ' . $e->getMessage());
+        }
         return view('progreso.index', compact('paciente', 'progresos'));
     }
 
@@ -30,12 +35,19 @@ class ProgresoController extends Controller
             'fecha' => 'required'
         ]);
 
-        DB::table('progreso')->insert([
-            'idcliente' => $idPaciente,
-            'descripcion' => $request->descripcion,
-            'fecha' => $request->fecha
-        ]);
+        try {
 
-        return redirect()->route('progreso', $idPaciente);
+            DB::table('progreso')->insert([
+                'idcliente' => $idPaciente,
+                'descripcion' => $request->descripcion,
+                'fecha' => $request->fecha
+            ]);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al guardar el progreso: ' . $e->getMessage());
+        }
+
+        return redirect()->route('progreso', $idPaciente)
+            ->with('success', 'Progreso registrado correctamente');
     }
 }

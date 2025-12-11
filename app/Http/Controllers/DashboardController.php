@@ -13,9 +13,15 @@ class DashboardController extends Controller
             return redirect()->route('login.form')->with('error', 'Debes iniciar sesión primero');
         }
 
-        $usuario = DB::table('usuario')
-            ->where('id_usuario', session('user_id'))
-            ->first(['nombre', 'apaterno', 'amaterno', 'correo', 'telefono', 'fecha_nac', 'id_tipo_usuario']);
+        try {
+
+            $usuario = DB::table('usuario')
+                ->where('id_usuario', session('user_id'))
+                ->first(['nombre','apaterno','amaterno','correo','telefono','fecha_nac','id_tipo_usuario']);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Hubo un error al cargar el dashboard: ' . $e->getMessage());
+        }
 
         return view('dashboard.index', [
             'usuario' => $usuario

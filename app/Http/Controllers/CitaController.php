@@ -5,10 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class CitaController extends Controller
-{
-    public function index()
-    {
+class CitaController extends Controller{
+
+    public function index(){
         $citas = DB::table('cita')
             ->join('usuario as paciente', 'cita.id_usuario', '=', 'paciente.id_usuario')
             ->join('usuario as fisio', 'cita.id_fisioterapeuta', '=', 'fisio.id_usuario')
@@ -32,14 +31,15 @@ class CitaController extends Controller
         return view('cita.create', compact('pacientes', 'fisios'));
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'paciente_id' => 'required',
-            'fisioterapeuta_id' => 'required',
-            'fecha' => 'required|date',
-            'hora' => 'required'
-        ]);
+    public function store(Request $request){
+    $request->validate([
+        'paciente_id' => 'required',
+        'fisioterapeuta_id' => 'required',
+        'fecha' => 'required|date',
+        'hora' => 'required'
+    ]);
+
+    try {
 
         // validar disponibilidad
         $existe = DB::table('cita')
@@ -51,7 +51,7 @@ class CitaController extends Controller
         if ($existe) {
             return back()->with('error', 'El fisioterapeuta ya tiene una cita en esa fecha y hora.');
         }
-
+        
         // obtener el siguiente ID
         $maxId = DB::table('cita')->max('id_cita');
         $nextId = ($maxId ? $maxId + 1 : 1);
@@ -67,10 +67,14 @@ class CitaController extends Controller
         ]);
 
         return redirect()->route('cita.index')->with('success', 'Cita creada correctamente');
-    }
 
-    public function show($id)
-    {
+    } catch (\Exception $e) {
+        return back()->with('error', 'Error al crear la cita: ' . $e->getMessage());
+    }
+}
+
+
+    public function show($id){
         $cita = DB::table('cita')->where('id_cita', $id)->first();
         return view('cita._detalles', compact('cita'));
     }
@@ -85,14 +89,15 @@ class CitaController extends Controller
     }
 
     public function update(Request $request, $id)
-    {
-        $request->validate([
-            'paciente_id' => 'required',
-            'fisioterapeuta_id' => 'required',
-            'fecha' => 'required|date',
-            'hora' => 'required'
-        ]);
+{
+    $request->validate([
+        'paciente_id' => 'required',
+        'fisioterapeuta_id' => 'required',
+        'fecha' => 'required|date',
+        'hora' => 'required'
+    ]);
 
+    try {
         // validar disponibilidad
         $existe = DB::table('cita')
             ->where('id_cita', '!=', $id)
@@ -116,21 +121,33 @@ class CitaController extends Controller
             ]);
 
         return redirect()->route('cita.index')->with('success', 'Cita actualizada correctamente');
-    }
 
-    public function destroy($id)
-    {
+    } catch (\Exception $e) {
+        return back()->with('error', 'Error al actualizar la cita: ' . $e->getMessage());
+    }
+}
+
+
+    public function destroy($id){
+    try {
         DB::table('cita')->where('id_cita', $id)->delete();
-
-        return redirect()->route('cita.index')
-            ->with('success', 'Cita eliminada correctamente');
+        return redirect()->route('cita.index')->with('success', 'Cita eliminada correctamente');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Error al eliminar la cita: ' . $e->getMessage());
     }
+}
+
 
      public function cancelar($id)
      {
-          DB::table('cita')->where('id_cita', $id)->update(['estatus' => 'cancelada']);
-          return redirect()->route('cita.index')->with('success', 'Cita cancelada correctamente');
-     }
+     try {
+        DB::table('cita')->where('id_cita', $id)->update(['estatus' => 'cancelada']);
+        return redirect()->route('cita.index')->with('success', 'Cita cancelada correctamente');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Error al cancelar la cita: ' . $e->getMessage());
+    }
+}
+
 
      public function disponibilidad(Request $request)
      {

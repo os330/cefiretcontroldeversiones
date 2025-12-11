@@ -18,23 +18,23 @@ class AuthController extends Controller
     }
     
     public function login(Request $request)
-    {
+{
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required'
+    ]);
 
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
-        
+    try {
+
         // buscar usuario por correo
         $user = DB::table('usuario')
             ->where('correo', $request->email)
             ->first();
-        
+        //verificar contrasena
         if ($user) {
-            // verificar contraseña
             $passwordValid = false;
             $password = $user->contrasena;
-            
+
             if (strlen($password) === 60 && strpos($password, '$2y$') === 0) {
                 $passwordValid = Hash::check($request->password, $password);
             } else {
@@ -45,12 +45,10 @@ class AuthController extends Controller
                         ->update(['contrasena' => Hash::make($request->password)]);
                 }
             }
-            
+            // iniciar sesion si la contrasena es valida
             if ($passwordValid) {
-                // crear nombre completo
                 $nombreCompleto = trim($user->nombre . ' ' . $user->apaterno . ' ' . $user->amaterno);
-                
-                // crear sesion
+
                 session([
                     'user_id' => $user->id_usuario,
                     'user_nombre' => $nombreCompleto,
@@ -58,14 +56,17 @@ class AuthController extends Controller
                     'user_tipo' => $user->id_tipo_usuario,
                     'logged_in' => true
                 ]);
-                
+
                 return redirect()->route('dashboard')->with('success', '¡Bienvenido ' . $user->nombre . '!');
             }
         }
-        
+
         return back()->withErrors(['email' => 'Correo o contraseña incorrectos']);
+
+    } catch (\Exception $e) {
+        return back()->withErrors(['email' => 'Error interno en el login: ' . $e->getMessage()]);
     }
-    
+}
     // cerrar sesion
     public function logout()
     {

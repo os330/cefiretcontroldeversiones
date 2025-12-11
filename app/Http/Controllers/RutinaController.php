@@ -14,27 +14,32 @@ class RutinaController extends Controller
             return redirect()->route('login.form');
         }
 
-        $rutinas = DB::table('rutina as r')
-    ->join('expediente as e', 'r.id_expediente', '=', 'e.id_expediente')
-    ->join('usuario as u', 'e.id_usuario', '=', 'u.id_usuario')
-    ->leftJoin('rutinadetalles as rd', 'r.id_rutina', '=', 'rd.id_rutina')
-    ->leftJoin('video as v', 'rd.id_video', '=', 'v.id_video')
-    ->select(
-        'r.id_rutina',
-        'r.fecha_asignacion',
-        'u.nombre',
-        'u.apaterno',
-        'u.amaterno',
-        DB::raw('COALESCE(v.titulo, "") as video_titulo'),
-        DB::raw('COALESCE(v.url, "") as video_url')
-    )
-    ->orderBy('r.fecha_asignacion', 'desc')
-    ->get();
+        try {
 
+            $rutinas = DB::table('rutina as r')
+                ->join('expediente as e', 'r.id_expediente', '=', 'e.id_expediente')
+                ->join('usuario as u', 'e.id_usuario', '=', 'u.id_usuario')
+                ->leftJoin('rutinadetalles as rd', 'r.id_rutina', '=', 'rd.id_rutina')
+                ->leftJoin('video as v', 'rd.id_video', '=', 'v.id_video')
+                ->select(
+                    'r.id_rutina',
+                    'r.fecha_asignacion',
+                    'u.nombre',
+                    'u.apaterno',
+                    'u.amaterno',
+                    DB::raw('COALESCE(v.titulo, "") as video_titulo'),
+                    DB::raw('COALESCE(v.url, "") as video_url')
+                )
+                ->orderBy('r.fecha_asignacion', 'desc')
+                ->get();
 
-        $pacientes = DB::table('usuario')
-            ->where('id_tipo_usuario', 3)
-            ->get();
+            $pacientes = DB::table('usuario')
+                ->where('id_tipo_usuario', 3)
+                ->get();
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al cargar las rutinas: ' . $e->getMessage());
+        }
 
         return view('rutinas.index', compact('rutinas', 'pacientes'));
     }
@@ -45,9 +50,13 @@ class RutinaController extends Controller
             return redirect()->route('login.form');
         }
 
-        $pacientes = DB::table('usuario')
-            ->where('id_tipo_usuario', 3)
-            ->get();
+        try {
+            $pacientes = DB::table('usuario')
+                ->where('id_tipo_usuario', 3)
+                ->get();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al cargar los pacientes: ' . $e->getMessage());
+        }
 
         return view('rutinas.create', compact('pacientes'));
     }
@@ -71,7 +80,6 @@ class RutinaController extends Controller
         ]);
 
         try {
-            // obtener o crear expediente
             $expediente = DB::table('expediente')
                 ->where('id_usuario', $request->id_paciente)
                 ->first();
@@ -90,20 +98,17 @@ class RutinaController extends Controller
                 $expedienteId = $expediente->id_expediente;
             }
 
-            // crear video
             $videoId = DB::table('video')->insertGetId([
                 'titulo' => $request->video_titulo,
                 'descripcion' => $request->video_descripcion ?? '',
                 'url' => $request->video_url
             ]);
 
-            // crear rutina
             $rutinaId = DB::table('rutina')->insertGetId([
                 'fecha_asignacion' => $request->fecha_asignacion,
                 'id_expediente' => $expedienteId
             ]);
 
-            // crear detalle
             DB::table('rutinadetalles')->insert([
                 'id_rutina' => $rutinaId,
                 'id_video' => $videoId,
@@ -113,7 +118,6 @@ class RutinaController extends Controller
                 'observaciones' => $request->observaciones
             ]);
 
-            // guardar dias
             foreach ($request->dias as $dia) {
                 DB::table('rutina_dias')->insert([
                     'id_rutina' => $rutinaId,
@@ -135,37 +139,43 @@ class RutinaController extends Controller
             return redirect()->route('login.form');
         }
 
-        $rutina = DB::table('rutina as r')
-            ->join('expediente as e', 'r.id_expediente', '=', 'e.id_expediente')
-            ->join('usuario as u', 'e.id_usuario', '=', 'u.id_usuario')
-            ->leftJoin('rutinadetalles as rd', 'r.id_rutina', '=', 'rd.id_rutina')
-            ->leftJoin('video as v', 'rd.id_video', '=', 'v.id_video')
-            ->where('r.id_rutina', $id)
-            ->select(
-                'r.*',
-                'u.id_usuario as paciente_id',
-                'u.nombre',
-                'u.apaterno',
-                'rd.repeticiones',
-                'rd.series',
-                'rd.tiempo',
-                'rd.observaciones',
-                'v.id_video',
-                'v.titulo',
-                'v.descripcion',
-                'v.url'
-            )
-            ->first();
+        try {
 
-        if (!$rutina) {
-            return redirect()->route('rutinas.index')
-                ->with('error', 'Rutina no encontrada.');
+            $rutina = DB::table('rutina as r')
+                ->join('expediente as e', 'r.id_expediente', '=', 'e.id_expediente')
+                ->join('usuario as u', 'e.id_usuario', '=', 'u.id_usuario')
+                ->leftJoin('rutinadetalles as rd', 'r.id_rutina', '=', 'rd.id_rutina')
+                ->leftJoin('video as v', 'rd.id_video', '=', 'v.id_video')
+                ->where('r.id_rutina', $id)
+                ->select(
+                    'r.*',
+                    'u.id_usuario as paciente_id',
+                    'u.nombre',
+                    'u.apaterno',
+                    'rd.repeticiones',
+                    'rd.series',
+                    'rd.tiempo',
+                    'rd.observaciones',
+                    'v.id_video',
+                    'v.titulo',
+                    'v.descripcion',
+                    'v.url'
+                )
+                ->first();
+
+            if (!$rutina) {
+                return redirect()->route('rutinas.index')
+                    ->with('error', 'Rutina no encontrada.');
+            }
+
+            $diasRutina = DB::table('rutina_dias')
+                ->where('id_rutina', $id)
+                ->pluck('dia')
+                ->toArray();
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al cargar la rutina: ' . $e->getMessage());
         }
-
-        $diasRutina = DB::table('rutina_dias')
-            ->where('id_rutina', $id)
-            ->pluck('dia')
-            ->toArray();
 
         return view('rutinas.edit', compact('rutina', 'diasRutina'));
     }
